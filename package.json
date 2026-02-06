@@ -1,0 +1,23 @@
+{
+  "name": "study_app",
+  "version": "1.0.0",
+  "description": "source myenv/bin/activate #Run the redis Server  redis-server #This command is used to run the background worker celery -A study_app worker --loglevel=info #Run the python django server in a new terminal  python manage.py runserver swagger documentation type  http://localhost:8000/swagger/ in your browser",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Remedy1995/study_app_backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Remedy1995/study_app_backend/issues"
+  },
+  "homepage": "https://github.com/Remedy1995/study_app_backend#readme",
+  "devDependencies": {
+    "aws-cdk": "^2.1033.0"
+  }
+}

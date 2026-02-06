@@ -1,0 +1,29 @@
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# CDK
+.cdk.staging/
+cdk.out/
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node
+node_modules/
+npm-debug.log
+
+# Project specific
+*.sqlite3
+*.db
+.DS_Store

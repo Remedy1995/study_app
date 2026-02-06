@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    container_name: studyapp_redis
+
+  studyapp_django:
+    build: .
+    container_name: studyapp_django
+    command: daphne -b 0.0.0.0 -p 8000 study_app.asgi:application
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      - redis
+    ports:               # ✅ expose Django directly for dev/debug
+      - "8000:8000"
+
+  studyapp_celery_worker:
+    build: .
+    command: celery -A study_app worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - studyapp_django
+
+  studyapp_celery_beat:
+    build: .
+    command: celery -A study_app beat -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - studyapp_django
+
+  nginx:
+    image: nginx:latest
+    container_name: studyapp_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/app/staticfiles
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - studyapp_django
+
+volumes:
+  static_volume:

@@ -1,0 +1,22 @@
+Django==3.2.20
+djangorestframework==3.14.0
+django-cors-headers==3.13.0
+
+# ASGI / WebSockets
+channels==3.0.5
+daphne==3.0.2
+asgiref>=3.4,<4.0
+channels-redis==3.4.1
+
+# Celery / Redis
+celery==5.3.6
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+redis==4.3.6
+requests>=2.31.0,<3
+# Auth / Config
+python-decouple==3.8
+djangorestframework-simplejwt==5.3.1
+
+# Swagger
+drf-yasg==1.21.7
