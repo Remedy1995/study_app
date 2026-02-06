@@ -15,7 +15,7 @@ services:
     depends_on:
       - redis
     ports:               # ✅ expose Django directly for dev/debug
-      - "8001:8000"
+      - "8002:8000"
 
   studyapp_celery_worker:
     build: .
