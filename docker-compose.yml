@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:15
+    container_name: studyapp_postgres
+    environment:
+      POSTGRES_DB: studyapp_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   redis:
     image: redis:7
     container_name: studyapp_redis
@@ -13,6 +25,7 @@ services:
       - .:/app
       - static_volume:/app/staticfiles
     depends_on:
+      - postgres
       - redis
     ports:               # ✅ expose Django directly for dev/debug
       - "8002:8000"
@@ -23,6 +36,7 @@ services:
     volumes:
       - .:/app
     depends_on:
+      - postgres
       - redis
       - studyapp_django
 
@@ -32,6 +46,7 @@ services:
     volumes:
       - .:/app
     depends_on:
+      - postgres
       - redis
       - studyapp_django
 
@@ -48,3 +63,4 @@ services:
 
 volumes:
   static_volume:
+  postgres_data:
