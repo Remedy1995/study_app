@@ -150,26 +150,79 @@ def summarize_transcript(self, lecture_id):
            
 
 
-@shared_task
-def export_summary_to_pdf(lecture_id):
-    lecture = AudioLecture.objects.get(id=lecture_id)
-    group_name = f"lecture_{lecture_id}"
+@shared_task(bind=True, max_retries=3)
+def export_summary_to_pdf(self, lecture_id):
+    try:
+        lecture = AudioLecture.objects.get(id=lecture_id)
+        group_name = f"lecture_{lecture_id}"
 
-    notify_ws(group_name, "status_update", {"status": "Exporting PDF"})
-
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", size=12)
-    pdf.multi_cell(0, 10, f"Lecture: {lecture.title}\n\nSummary:\n{lecture.summary}")
-
-    path = os.path.join(settings.MEDIA_ROOT, f"summaries/{lecture.id}.pdf")
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    pdf.output(path)
-
-    lecture.pdf_file.name = f"summaries/{lecture.id}.pdf"
-    lecture.save()
-
-    notify_ws(group_name, "status_update", {"status": "PDF ready", "pdf": lecture.pdf_file.url})
+        notify_ws(group_name, "status_update", {"status": "Exporting PDF"})
+        
+        # Add progress tracking
+        notify_ws(group_name, "status_update", {"status": "Creating PDF layout"})
+        
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        
+        notify_ws(group_name, "status_update", {"status": "Adding content to PDF"})
+        
+        # Split long content into chunks to avoid memory issues
+        title = lecture.title[:100]  # Limit title length
+        summary = lecture.summary or "No summary available"
+        
+        # Add title
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(0, 10, title, ln=True, align='C')
+        pdf.ln(10)
+        
+        # Add summary with better formatting
+        pdf.set_font("Arial", size=12)
+        summary_lines = summary.split('\n')
+        for line in summary_lines:
+            if line.strip():
+                pdf.multi_cell(0, 8, line.strip())
+        
+        notify_ws(group_name, "status_update", {"status": "Saving PDF file"})
+        
+        # Ensure directory exists
+        path = os.path.join(settings.MEDIA_ROOT, f"summaries/lecture_{lecture_id}_summary.pdf")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        
+        # Save PDF with error handling
+        try:
+            pdf.output(path)
+        except Exception as pdf_error:
+            logger.error(f"PDF generation error: {pdf_error}")
+            raise self.retry(exc=pdf_error, countdown=5)
+        
+        # Update lecture with PDF file
+        lecture.pdf_file.name = f"summaries/lecture_{lecture_id}_summary.pdf"
+        lecture.save()
+        
+        notify_ws(group_name, "status_update", {
+            "status": "PDF ready", 
+            "pdf": lecture.pdf_file.url,
+            "message": "PDF generated successfully!"
+        })
+        
+        logger.info(f"PDF generated successfully for lecture {lecture_id}")
+        
+    except AudioLecture.DoesNotExist:
+        logger.error(f"Lecture with id {lecture_id} does not exist.")
+        notify_ws(f"lecture_{lecture_id}", "status_update", {
+            "status": "Error", 
+            "message": "Lecture not found"
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generating PDF for lecture {lecture_id}: {str(e)}")
+        notify_ws(f"lecture_{lecture_id}", "status_update", {
+            "status": "Error", 
+            "message": f"PDF generation failed: {str(e)}"
+        })
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=e, countdown=10)
 
 
 @shared_task
